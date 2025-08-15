@@ -1,512 +1,180 @@
-<!DOCTYPE html>
-<html lang="el">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Εργαλείο Μετάφρασης Υποτίτλων SRT</title> <!-- Ο τίτλος απλοποιήθηκε -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            display: flex;
-            flex-direction: column; /* Changed to column to stack logo above content */
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 32px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-        .logo {
-            margin-bottom: 20px; /* Space between logo and container */
-            max-width: 250px; /* Adjust logo size */
-            height: auto;
-            border-radius: 8px; /* Slightly rounded corners for the image */
-        }
-        .input-group {
-            margin-bottom: 24px;
-        }
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-            border: 2px dashed #d1d5db;
-            border-radius: 8px;
-            padding: 20px;
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
-        .file-input-wrapper:hover {
-            border-color: #6366f1;
-        }
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
-        }
-        .file-input-wrapper label {
-            display: block;
-            color: #4b5563;
-            font-size: 16px;
-            font-weight: 500;
-        }
-        .file-name {
-            margin-top: 8px;
-            font-size: 14px;
-            color: #374151;
-        }
-        .btn {
-            background-color: #6366f1;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.1s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-        }
-        .btn:hover {
-            background-color: #4f46e5;
-            transform: translateY(-1px);
-        }
-        .btn:active {
-            transform: translateY(0);
-            box-shadow: none;
-        }
-        .btn:disabled {
-            background-color: #a7a7a7;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #6366f1;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .message-box {
-            margin-top: 20px;
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: left;
-            display: none; /* Hidden by default */
-        }
-        .message-box.success {
-            background-color: #d1fae5;
-            color: #065f46;
-            border: 1px solid #34d399;
-        }
-        .message-box.error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #ef4444;
-        }
-        .message-box.info {
-            background-color: #e0f2fe;
-            color: #0b72c2;
-            border: 1px solid #38bdf8;
-        }
-        .download-link {
-            display: none; /* Hidden by default */
-            margin-top: 20px;
-            font-weight: 500;
-            color: #1d4ed8;
-            text-decoration: none;
-        }
-        .download-link:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <!-- Logo Section -->
-    <img src="https://placehold.co/250x60/000000/FFFFFF?text=PCsteps" alt="PCsteps" class="logo">
-    <div class="container">
-        <h1 class="text-3xl font-bold mb-6 text-gray-800">Μεταφραστής Υποτίτλων SRT</h1>
-        <p class="text-gray-600 mb-8">Μεταφράστε τα αρχεία .srt σας στα ελληνικά με το Gemini, διατηρώντας την ακρίβεια των χρονοσφραγίδων.</p>
+translateBtn.addEventListener('click', async () => {
+    if (!selectedFile) {
+        showMessage("error", "Παρακαλώ επιλέξτε ένα αρχείο .srt.");
+        return;
+    }
+    loadingSpinner.classList.remove('hidden');
+    translateBtn.disabled = true;
+    messageBox.style.display = 'none';
+    downloadLink.style.display = 'none';
+    let translationErrorOccurred = false;
 
-        <div class="input-group">
-            <div class="file-input-wrapper">
-                <input type="file" id="srtFile" accept=".srt">
-                <label for="srtFile">
-                    <span id="filePlaceholder">Ανεβάστε το αρχείο .srt</span>
-                </label>
-                <div class="file-name" id="fileNameDisplay">Δεν έχει επιλεγεί αρχείο</div>
-            </div>
-        </div>
+    try {
+        const fileContent = await selectedFile.text();
+        const srtBlocks = parseSrt(fileContent);
+        if (srtBlocks.length === 0) {
+            showMessage("info", "Το αρχείο SRT είναι κενό ή έχει λανθασμένη μορφή.");
+            return;
+        }
 
-        <button id="translateBtn" class="btn" disabled>
-            Μετάφραση
-            <span id="loadingSpinner" class="loading-spinner hidden"></span>
-        </button>
+        const translatedBlocks = new Array(srtBlocks.length);
+        let batches = [];
+        let currentBatchTexts = [];
+        let currentBatchOriginalIndices = [];
 
-        <div id="messageBox" class="message-box"></div>
-        <a id="downloadLink" class="download-link" href="#" download="translated_subtitles.srt.ell">Κατεβάστε το μεταφρασμένο αρχείο</a>
-    </div>
+        // Create batches
+        for (let i = 0; i < srtBlocks.length; i++) {
+            const block = srtBlocks[i];
+            const blockText = block.text;
+            const potentialBatchSize = currentBatchTexts.join(DELIMITER).length + blockText.length + (currentBatchTexts.length > 0 ? DELIMITER.length : 0);
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
-
-        let app;
-        let auth;
-
-        // Initialize Firebase and authenticate
-        async function initFirebase() {
-            try {
-                if (Object.keys(firebaseConfig).length > 0) {
-                    app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    }
-                } else {
-                    console.warn("Firebase config is empty. Firestore and Auth will not be available.");
-                }
-            } catch (error) {
-                console.error("Error initializing Firebase or signing in:", error);
-                showMessage("error", "Αδυναμία αρχικοποίησης Firebase. Ορισμένες λειτουργίες ενδέχεται να μην είναι διαθέσιμες.");
+            if (potentialBatchSize > MAX_CHARS_PER_BATCH && currentBatchTexts.length > 0) {
+                batches.push({
+                    texts: currentBatchTexts,
+                    originalIndices: currentBatchOriginalIndices
+                });
+                currentBatchTexts = [];
+                currentBatchOriginalIndices = [];
             }
-        }
+            currentBatchTexts.push(blockText);
+            currentBatchOriginalIndices.push(i);
 
-        // Call Firebase initialization immediately
-        initFirebase();
-
-        const srtFileInput = document.getElementById('srtFile');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const translateBtn = document.getElementById('translateBtn');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const messageBox = document.getElementById('messageBox');
-        const downloadLink = document.getElementById('downloadLink');
-
-        let selectedFile = null;
-
-        // Function to show messages to the user
-        function showMessage(type, message) {
-            messageBox.textContent = message;
-            messageBox.className = `message-box ${type}`;
-            messageBox.style.display = 'block';
-            // Hide message after 5 seconds
-            setTimeout(() => {
-                messageBox.style.display = 'none';
-            }, 5000);
-        }
-
-        // Handle file selection
-        srtFileInput.addEventListener('change', (event) => {
-            selectedFile = event.target.files[0];
-            if (selectedFile) {
-                fileNameDisplay.textContent = selectedFile.name;
-                translateBtn.disabled = false;
-                downloadLink.style.display = 'none'; // Hide download link if new file is selected
-                messageBox.style.display = 'none'; // Hide any previous messages
-            } else {
-                fileNameDisplay.textContent = 'Δεν έχει επιλεγεί αρχείο';
-                translateBtn.disabled = true;
-            }
-        });
-
-        // Function to strip HTML tags from a string
-        function stripHtmlTags(htmlString) {
-            const doc = new DOMParser().parseFromString(htmlString, 'text/html');
-            return doc.body.textContent || "";
-        }
-
-        // Parse SRT content into blocks
-        function parseSrt(content) {
-            const blocks = [];
-            const lines = content.split(/\r?\n/);
-            let currentBlock = { id: null, timestamps: '', text: [] };
-
-            for (const line of lines) {
-                if (line.trim() === '') { // Empty line signifies end of a block
-                    if (currentBlock.id !== null) {
-                        blocks.push({
-                            id: currentBlock.id,
-                            timestamps: currentBlock.timestamps,
-                            text: stripHtmlTags(currentBlock.text.join('\n')) // Strip HTML when parsing
-                        });
-                    }
-                    currentBlock = { id: null, timestamps: '', text: [] };
-                } else if (!isNaN(parseInt(line.trim())) && currentBlock.id === null) {
-                    // This is the subtitle number
-                    currentBlock.id = parseInt(line.trim());
-                } else if (line.includes('-->') && currentBlock.timestamps === '') {
-                    // This is the timestamp line
-                    currentBlock.timestamps = line.trim();
-                } else if (currentBlock.id !== null) {
-                    // This is part of the subtitle text
-                    currentBlock.text.push(line.trim());
-                }
-            }
-            // Add the last block if it exists
-            if (currentBlock.id !== null) {
-                blocks.push({
-                    id: currentBlock.id,
-                    timestamps: currentBlock.timestamps,
-                    text: stripHtmlTags(currentBlock.text.join('\n')) // Strip HTML for the last block too
+            if (i === srtBlocks.length - 1 && currentBatchTexts.length > 0) {
+                batches.push({
+                    texts: currentBatchTexts,
+                    originalIndices: currentBatchOriginalIndices
                 });
             }
-            return blocks;
         }
 
-        // Reconstruct SRT content from translated blocks
-        function reconstructSrt(blocks) {
-            let srtContent = '';
-            for (const block of blocks) {
-                srtContent += `${block.id}\n`;
-                srtContent += `${block.timestamps}\n`;
-                srtContent += `${block.text}\n\n`;
-            }
-            return srtContent.trim(); // Remove trailing newlines
-        }
+        // Process each batch
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batch = batches[batchIndex];
+            const batchPromptText = batch.texts.join(DELIMITER);
 
-        // Gemini API call function with exponential backoff
-        async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
-            const payload = {
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-            };
-            const apiKey = ""; // Canvas environment automatically injects API key
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const translationPrompt = `Μετάφρασε τα ακόλουθα τμήματα υποτίτλων από τα Αγγλικά στα Ελληνικά. Κάθε τμήμα οριοθετείται ΑΚΡΙΒΩΣ από το \`${DELIMITER}\`. Μετάφρασε μόνο το κείμενο μεταξύ των οριοθετητών, χωρίς να προσθέσεις καμία μορφοποίηση (όπως ετικέτες HTML), και διατήρησε τον ίδιο αριθμό οριοθετητών στην απάντησή σου. Μην τροποποιήσεις τους οριοθετητές ή τη σειρά των τμημάτων. Διατήνει το ακριβές νόημα και ύφος κάθε υποτίτλου. Εάν ένα τμήμα είναι κενό, επέστρεψε κενό τμήμα.
+\`\`\`
+${batchPromptText}
+\`\`\`
+`;
 
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error(`API Error (Attempt ${i + 1}):`, response.status, errorData);
-                        if (response.status === 429 && i < retries - 1) { // Too Many Requests
-                            await new Promise(res => setTimeout(res, delay));
-                            delay *= 2; // Exponential backoff
-                            continue;
-                        }
-                        throw new Error(`Gemini API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-                    }
-
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        return result.candidates[0].content.parts[0].text;
-                    } else {
-                        throw new Error("Unexpected API response structure or no content.");
-                    }
-                } catch (error) {
-                    console.error(`Error calling Gemini API (Attempt ${i + 1}):`, error);
-                    if (i === retries - 1) throw error; // Re-throw if it's the last retry
-                    await new Promise(res => setTimeout(res, delay));
-                    delay *= 2; // Exponential backoff
-                }
-            }
-            throw new Error("Failed to call Gemini API after multiple retries.");
-        }
-
-
-        // Constants for batching
-        const MAX_CHARS_PER_BATCH = 2500; // Updated max characters in the text part of a batch
-        const DELIMITER = "---SUBTITLE_DELIMITER---"; // Unique delimiter for segments
-
-        // Handle translation process
-        translateBtn.addEventListener('click', async () => {
-            if (!selectedFile) {
-                showMessage("error", "Παρακαλώ επιλέξτε ένα αρχείο .srt.");
-                return;
-            }
-
-            loadingSpinner.classList.remove('hidden');
-            translateBtn.disabled = true;
-            messageBox.style.display = 'none';
-            downloadLink.style.display = 'none';
-
-            let translationErrorOccurred = false; // Flag to track if any error happened
+            const firstIndex = batch.originalIndices[0] + 1;
+            const lastIndex = batch.originalIndices[batch.originalIndices.length - 1] + 1;
+            showMessage("info", `Μεταφράζονται οι υπότιτλοι: ${firstIndex} - ${lastIndex} / ${srtBlocks.length} (ομαδοποιημένα, ομάδα ${batchIndex + 1} από ${batches.length})`);
 
             try {
-                const fileContent = await selectedFile.text();
-                const srtBlocks = parseSrt(fileContent); // HTML tags are stripped here
+                const batchedTranslatedText = await callGeminiAPI(translationPrompt);
 
-                if (srtBlocks.length === 0) {
-                    showMessage("info", "Το αρχείο SRT είναι κενό ή έχει λανθασμένη μορφή.");
-                    return;
-                }
+                // 🔥 ΚΛΕΙΔΙΟΥ ΛΥΣΗ: Αντί για split(), χρησιμοποιούμε αναζήτηση διαχωριστικών
+                const delimiterRegex = new RegExp(`(${DELIMITER})`, 'g');
+                const matches = [...batchedTranslatedText.matchAll(delimiterRegex)];
+                
+                // Έλεγχος αν το πλήθος των διαχωριστικών αντιστοιχεί
+                if (matches.length !== batch.originalIndices.length) {
+                    console.warn(`Ασυμφωνία στο πλήθος των διαχωριστικών. Αναμενόμενα: ${batch.originalIndices.length}, Λήφθηκαν: ${matches.length}. Επαναφορά σε αρχικό κείμενο.`);
+                    translationErrorOccurred = true;
 
-                const translatedBlocks = new Array(srtBlocks.length); // Pre-allocate array to hold results in order
-                let batches = [];
-                let currentBatchTexts = [];
-                let currentBatchOriginalIndices = [];
+                    for (const originalIndex of batch.originalIndices) {
+                        translatedBlocks[originalIndex] = {
+                            id: srtBlocks[originalIndex].id,
+                            timestamps: srtBlocks[originalIndex].timestamps,
+                            text: srtBlocks[originalIndex].text + `
+[Αδυναμία μετάφρασης αυτού του τμήματος - Ασυμφωνία διαχωριστικών]`
+                        };
+                    }
+                } else {
+                    // Εξαγωγή των τμημάτων μεταξύ των διαχωριστικών
+                    let start = 0;
+                    const extractedSegments = [];
 
-                // Create batches
-                for (let i = 0; i < srtBlocks.length; i++) {
-                    const block = srtBlocks[i];
-                    const blockText = block.text;
+                    for (let i = 0; i < matches.length; i++) {
+                        const match = matches[i];
+                        const segmentStart = start;
+                        const segmentEnd = match.index;
 
-                    // Calculate potential new batch size
-                    const potentialBatchSize = currentBatchTexts.join(DELIMITER).length + blockText.length + (currentBatchTexts.length > 0 ? DELIMITER.length : 0);
+                        const segment = batchedTranslatedText.substring(segmentStart, segmentEnd).trim();
+                        extractedSegments.push(stripHtmlTags(segment));
 
-                    // If adding this block would exceed the limit and there are already items in the current batch,
-                    // or if it's the very last block, finalize the current batch and start a new one if necessary.
-                    if (potentialBatchSize > MAX_CHARS_PER_BATCH && currentBatchTexts.length > 0) {
-                        batches.push({
-                            texts: currentBatchTexts,
-                            originalIndices: currentBatchOriginalIndices
-                        });
-                        currentBatchTexts = [];
-                        currentBatchOriginalIndices = [];
+                        start = match.index + match[0].length; // Ξεκινάμε μετά το διαχωριστικό
                     }
 
-                    currentBatchTexts.push(blockText);
-                    currentBatchOriginalIndices.push(i);
+                    // Προσθήκη του τελευταίου τμήματος (μετά το τελευταίο διαχωριστικό)
+                    const finalSegment = batchedTranslatedText.substring(start).trim();
+                    extractedSegments.push(stripHtmlTags(finalSegment));
 
-                    // If it's the very last block, make sure this final batch is added
-                    if (i === srtBlocks.length - 1 && currentBatchTexts.length > 0) {
-                        batches.push({
-                            texts: currentBatchTexts,
-                            originalIndices: currentBatchOriginalIndices
-                        });
-                    }
-                }
-
-                // Process each batch
-                for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-                    const batch = batches[batchIndex];
-                    const batchPromptText = batch.texts.join(DELIMITER);
-
-                    // Adjusted prompt to explicitly state no formatting and strict adherence to delimiters.
-                    const translationPrompt = `Μετάφρασε τα ακόλουθα τμήματα υποτίτλων από τα Αγγλικά στα Ελληνικά. Κάθε τμήμα οριοθετείται ΑΚΡΙΒΩΣ από το \`${DELIMITER}\`. Μετάφρασε μόνο το κείμενο μεταξύ των οριοθετητών, χωρίς να προσθέσεις καμία μορφοποίηση (όπως ετικέτες HTML), και διατήρησε τον ίδιο αριθμό οριοθετητών στην απάντησή σου. Μην τροποποιήσεις τους οριοθετητές ή τη σειρά των τμημάτων. Διατήνει το ακριβές νόημα και ύφος κάθε υποτίτλου. Εάν ένα τμήμα είναι κενό, επέστρεψε κενό τμήμα.
-                    \`\`\`
-                    ${batchPromptText}
-                    \`\`\`
-                    `;
-
-                    const firstIndex = batch.originalIndices[0] + 1;
-                    const lastIndex = batch.originalIndices[batch.originalIndices.length - 1] + 1;
-                    showMessage("info", `Μεταφράζονται οι υπότιτλοι: ${firstIndex} - ${lastIndex} / ${srtBlocks.length} (ομαδοποιημένα, ομάδα ${batchIndex + 1} από ${batches.length})`);
-
-                    try {
-                        const batchedTranslatedText = await callGeminiAPI(translationPrompt);
-                        // Use a regex to split to handle potential leading/trailing empty strings more robustly
-                        const translatedSegments = batchedTranslatedText.split(new RegExp(`\\s*${DELIMITER}\\s*`)).map(s => stripHtmlTags(s.trim()));
-
-                        // Filter out empty strings that might result from splitting if delimiter is at start/end
-                        const cleanedTranslatedSegments = translatedSegments.filter(s => s !== '');
-
-                        // IMPORTANT: We need to ensure that the number of translated segments matches the number of original segments
-                        // if not, it means the model didn't reproduce the delimiters correctly or skipped segments.
-                        // In such cases, we fallback to original text for these specific blocks.
-                        if (cleanedTranslatedSegments.length !== batch.originalIndices.length) {
-                            console.warn(`Ασυμφωνία στο πλήθος μεταφρασμένων τμημάτων και αρχικών τμημάτων για batch ${batchIndex + 1}. Αναμενόμενα: ${batch.originalIndices.length}, Λήφθηκαν: ${cleanedTranslatedSegments.length}. Επαναφορά σε αρχικό κείμενο για αυτή την ομάδα.`);
-                            translationErrorOccurred = true;
-                            for (const originalIndex of batch.originalIndices) {
-                                translatedBlocks[originalIndex] = {
-                                    id: srtBlocks[originalIndex].id,
-                                    timestamps: srtBlocks[originalIndex].timestamps,
-                                    text: srtBlocks[originalIndex].text + `\n[Αδυναμία μετάφρασης αυτού του τμήματος - Ασυμφωνία τμημάτων]`
-                                };
-                            }
-                        } else {
-                            // Map translated segments back to original blocks
-                            for (let j = 0; j < batch.originalIndices.length; j++) {
-                                const originalIndex = batch.originalIndices[j];
-                                const translatedSegment = cleanedTranslatedSegments[j];
-                                translatedBlocks[originalIndex] = {
-                                    id: srtBlocks[originalIndex].id,
-                                    timestamps: srtBlocks[originalIndex].timestamps,
-                                    text: translatedSegment || "" // Fallback for empty translations
-                                };
-                            }
-                        }
-                    } catch (apiError) {
-                        console.error(`Σφάλμα μετάφρασης ομαδοποιημένων μπλοκ (ομάδα ${batchIndex + 1}):`, apiError);
+                    // Έλεγχος αν το πλήθος των εξαχθέντων τμημάτων αντιστοιχεί
+                    if (extractedSegments.length !== batch.originalIndices.length) {
+                        console.warn(`Ασυμφωνία στο πλήθος των εξαχθέντων τμημάτων. Αναμενόμενα: ${batch.originalIndices.length}, Λήφθηκαν: ${extractedSegments.length}. Επαναφορά σε αρχικό κείμενο.`);
                         translationErrorOccurred = true;
-                        // If translation fails for a batch, keep original text for these blocks
+
                         for (const originalIndex of batch.originalIndices) {
                             translatedBlocks[originalIndex] = {
                                 id: srtBlocks[originalIndex].id,
                                 timestamps: srtBlocks[originalIndex].timestamps,
-                                text: srtBlocks[originalIndex].text + `\n[Αδυναμία μετάφρασης αυτού του τμήματος - Σφάλμα API]`
+                                text: srtBlocks[originalIndex].text + `
+[Αδυναμία μετάφρασης αυτού του τμήματος - Ασυμφωνία εξαγωγής]`
                             };
                         }
-                        showMessage("error", `Ορισμένα τμήματα δεν μεταφράστηκαν λόγω σφάλματος. Παρακαλώ ελέγξτε την κονσόλα.`);
+                    } else {
+                        // Αντιστοίχιση των τμημάτων
+                        for (let j = 0; j < batch.originalIndices.length; j++) {
+                            const originalIndex = batch.originalIndices[j];
+                            const translatedSegment = extractedSegments[j] || "";
+                            translatedBlocks[originalIndex] = {
+                                id: srtBlocks[originalIndex].id,
+                                timestamps: srtBlocks[originalIndex].timestamps,
+                                text: translatedSegment
+                            };
+                        }
                     }
                 }
+            } catch (apiError) {
+                console.error(`Σφάλμα μετάφρασης ομαδοποιημένων μπλοκ (ομάδα ${batchIndex + 1}):`, apiError);
+                translationErrorOccurred = true;
 
-                // Ensure all blocks have a translation, even if an error occurred in a batch
-                // This handles cases where translatedBlocks might have 'holes' if errors caused early exits in a batch loop
-                for (let i = 0; i < srtBlocks.length; i++) {
-                    if (translatedBlocks[i] === undefined || translatedBlocks[i] === null) {
-                        translatedBlocks[i] = {
-                            id: srtBlocks[i].id,
-                            timestamps: srtBlocks[i].timestamps,
-                            text: srtBlocks[i].text + `\n[Αδυναμία μετάφρασης αυτού του τμήματος - Απρόβλεπτο Σφάλμα]`
-                        };
-                        translationErrorOccurred = true;
-                    }
+                for (const originalIndex of batch.originalIndices) {
+                    translatedBlocks[originalIndex] = {
+                        id: srtBlocks[originalIndex].id,
+                        timestamps: srtBlocks[originalIndex].timestamps,
+                        text: srtBlocks[originalIndex].text + `
+[Αδυναμία μετάφρασης αυτού του τμήματος - Σφάλμα API]`
+                    };
                 }
-
-
-                const translatedSrtContent = reconstructSrt(translatedBlocks);
-                const blob = new Blob([translatedSrtContent], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-
-                downloadLink.href = url;
-                downloadLink.download = selectedFile.name.replace('.srt', '.srt.ell');
-                downloadLink.style.display = 'block';
-
-                if (translationErrorOccurred) {
-                    showMessage("error", `Η μετάφραση ολοκληρώθηκε, αλλά υπήρξαν σφάλματα σε ορισμένα τμήματα. Παρακαλώ ελέγξτε την κονσόλα.`);
-                } else {
-                    showMessage("success", `Η μετάφραση ολοκληρώθηκε επιτυχώς για όλα τα τμήματα!`);
-                }
-
-            } catch (error) {
-                console.error("Σφάλμα κατά τη διαδικασία μετάφρασης:", error);
-                showMessage("error", `Αδυναμία ολοκλήρωσης της μετάφρασης: ${error.message}`);
-            } finally {
-                loadingSpinner.classList.add('hidden');
-                translateBtn.disabled = false;
+                showMessage("error", `Ορισμένα τμήματα δεν μεταφράστηκαν λόγω σφάλματος. Παρακαλώ ελέγξτε την κονσόλα.`);
             }
-        });
-    </script>
-</body>
-</html>
+        }
+
+        // Βεβαιωθείτε ότι όλα τα τμήματα έχουν μεταφραστεί
+        for (let i = 0; i < srtBlocks.length; i++) {
+            if (translatedBlocks[i] === undefined || translatedBlocks[i] === null) {
+                translatedBlocks[i] = {
+                    id: srtBlocks[i].id,
+                    timestamps: srtBlocks[i].timestamps,
+                    text: srtBlocks[i].text + `
+[Αδυναμία μετάφρασης αυτού του τμήματος - Απρόβλεπτο Σφάλμα]`
+                };
+                translationErrorOccurred = true;
+            }
+        }
+
+        const translatedSrtContent = reconstructSrt(translatedBlocks);
+        const blob = new Blob([translatedSrtContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = selectedFile.name.replace('.srt', '.srt.ell');
+        downloadLink.style.display = 'block';
+
+        if (translationErrorOccurred) {
+            showMessage("error", `Η μετάφραση ολοκληρώθηκε, αλλά υπήρξαν σφάλματα σε ορισμένα τμήματα. Παρακαλώ ελέγξτε την κονσόλα.`);
+        } else {
+            showMessage("success", `Η μετάφραση ολοκληρώθηκε επιτυχώς για όλα τα τμήματα!`);
+        }
+
+    } catch (error) {
+        console.error("Σφάλμα κατά τη διαδικασία μετάφρασης:", error);
+        showMessage("error", `Αδυναμία ολοκλήρωσης της μετάφρασης: ${error.message}`);
+    } finally {
+        loadingSpinner.classList.add('hidden');
+        translateBtn.disabled = false;
+    }
+});
